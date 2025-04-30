@@ -1,8 +1,6 @@
 <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md space-y-4 mx-4 md:mx-30 my-10">
     <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Telefonnummer</label>
-    <input id="phone" type="text" wire:model.live="phone" wire:keyup.enter="updatedPhone"
-        placeholder="z. B. +49 30 1234567 x89"
-        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring focus:ring-opacity-50" />
+        <x-input label="Phone number" hint="Insert your phone number" wire:model.live="phone" wire:keyup.enter="updatedPhone"/>
     
     @error('phone')
         <div class="text-red-600 dark:text-red-400 text-sm">{{ $message }}</div>
