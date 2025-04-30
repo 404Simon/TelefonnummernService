@@ -59,6 +59,12 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "setup": [
+            "composer install",
+            "npm install",
+            "cp .env.example .env",
+            "@php artisan migrate --seed --force"
         ]
     },
     "extra": {
