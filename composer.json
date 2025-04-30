@@ -64,7 +64,8 @@
             "composer install",
             "npm install",
             "cp .env.example .env",
-            "@php artisan migrate --seed --force"
+            "@php artisan migrate --seed --force",
+            "@php artisan key:generate"
         ]
     },
     "extra": {
