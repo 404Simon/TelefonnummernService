@@ -24,11 +24,23 @@ class Dashboard extends Component
 
     // evtl. in config auslagern
     private const COUNTRIES = [
-        '49' => ['name' => 'Deutschland',       'flag' => '🇩🇪'],
-        '1' => ['name' => 'Vereinigte Staaten', 'flag' => '🇺🇸'],
-        '44' => ['name' => 'Vereinigtes Königreich', 'flag' => '🇬🇧'],
-        '33' => ['name' => 'Frankreich',        'flag' => '🇫🇷'],
+        '49'  => ['name' => 'Deutschland',            'flag' => '🇩🇪'],
+        '1'   => ['name' => 'Vereinigte Staaten',      'flag' => '🇺🇸'],
+        '44'  => ['name' => 'Vereinigtes Königreich',  'flag' => '🇬🇧'],
+        '33'  => ['name' => 'Frankreich',              'flag' => '🇫🇷'],
+        '91'  => ['name' => 'Indien',                  'flag' => '🇮🇳'],
+        '81'  => ['name' => 'Japan',                   'flag' => '🇯🇵'],
+        '39'  => ['name' => 'Italien',                 'flag' => '🇮🇹'],
+        '61'  => ['name' => 'Australien',              'flag' => '🇦🇺'],
+        '34'  => ['name' => 'Spanien',                 'flag' => '🇪🇸'],
+        '55'  => ['name' => 'Brasilien',               'flag' => '🇧🇷'],
+        '7'   => ['name' => 'Russland',                'flag' => '🇷🇺'],
+        '46'  => ['name' => 'Schweden',                'flag' => '🇸🇪'],
+        '82'  => ['name' => 'Südkorea',                'flag' => '🇰🇷'],
+        '31'  => ['name' => 'Niederlande',             'flag' => '🇳🇱'],
+        '86'  => ['name' => 'China',                   'flag' => '🇨🇳'],
     ];
+
 
     protected array $rules = [
         'phone' => ['required', 'string', 'max:255',
