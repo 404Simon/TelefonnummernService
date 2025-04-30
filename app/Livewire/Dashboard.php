@@ -57,6 +57,7 @@ class Dashboard extends Component
         }
 
         $this->detectCountry();
+        ds($this->countryCode);
     }
 
     private function parsePhone(string $input): void
