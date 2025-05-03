@@ -53,13 +53,16 @@ abstract class AbstractPhoneNumberParser
         $raw = $input;
         $normalized = $this->normalize($input);
         [$main, $directDial] = $this->extractExtension($normalized);
-        $rest = $this->stripPrefix($main);
-        [$ndc, $subscriber] = $this->splitNdcSubscriber($rest);
-        $type = $this->detectType($ndc);
-        $this->validateLength($ndc, $subscriber);
-        [$regionName, $provider] = $this->detectGeography($ndc, $type);
+        $rest       = $this->stripPrefix($main);
 
-        // formatiert international mit Leerzeichen
+        [$type, $ndc, $region, $provider] = $this->matchNdcAndGeo($rest);
+
+        $subscriber = substr($rest, strlen($ndc));
+
+        // 3. Validierung der Gesamtlänge nach E.164 und NDC/Subscriber-Längen
+        $this->validateLength($ndc, $subscriber);
+        $this->validateNdcAndSubscriberLengths($ndc, $subscriber);
+
         $formatted = "+{$this->countryCode} {$ndc} {$subscriber}" .
                      ($directDial ? " x{$directDial}" : "");
 
@@ -67,7 +70,7 @@ abstract class AbstractPhoneNumberParser
             phoneNumber: $raw,
             countryCode: $this->countryCode,
             ndc: $ndc,
-            region: $regionName,
+            region: $region,
             mobileProvider: $provider,
             subscriberNumber: $subscriber,
             directDialingCode: $directDial,
@@ -78,6 +81,38 @@ abstract class AbstractPhoneNumberParser
         );
     }
 
+   /**
+     * Kombinierte Erkennung von Typ, NDC, Region und Provider.
+     *
+     * @return array{PhoneNumberType, string, string, string|null}
+     * @throws CountryCodeParserException
+     */
+    protected function matchNdcAndGeo(string $rest): array
+    {
+        // Merge keys from both region and provider arrays
+        $possibleNdcs = array_unique(array_merge(
+            array_keys($this->ndcFixedRegions ?? []),
+            array_keys($this->ndcMobileProviders ?? [])
+        ));
+
+        // Sort by length descending to prioritize longer prefixes
+        usort($possibleNdcs, fn($a, $b) => strlen($b) <=> strlen($a));
+
+        foreach ($possibleNdcs as $ndc) {
+            if (str_starts_with($rest, $ndc)) {
+                $region = $this->ndcFixedRegions[$ndc] ?? $this->getRegion();
+                $provider = $this->ndcMobileProviders[$ndc] ?? null;
+                $type = isset($this->ndcFixedRegions[$ndc])
+                    ? PhoneNumberType::LANDLINE
+                    : (isset($this->ndcMobileProviders[$ndc]) ? PhoneNumberType::MOBILE : PhoneNumberType::UNKNOWN);
+
+                return [$type, $ndc, $region, $provider];
+            }
+    }
+
+    throw new CountryCodeParserException("Keine passende NDC für: {$rest}");
+    }
+
     /**
      * Entfernt unerlaubte Zeichen aus der Telefonnummer.
      */
@@ -86,16 +121,15 @@ abstract class AbstractPhoneNumberParser
         return preg_replace('/[^0-9+]/', '', $input) ?: '';
     }
 
+
     /**
-     * Trennt eine eventuell vorhandene Extension ab.
+     * Trennt eine eventuell vorhandene Extension (Durchwahl) ab.
      */
     protected function extractExtension(string $input): array
     {
-        // Match only if 'ext', 'x', or ';' are explicitly used to indicate an extension
         if (preg_match('/(.*?)(?:\s*(?:ext|x|;)\s*(\d+))$/i', $input, $m)) {
             return [trim($m[1]), $m[2]];
         }
-
         return [$input, null];
     }
 
@@ -112,78 +146,26 @@ abstract class AbstractPhoneNumberParser
         };
     }
 
-    /**
-     * Trennt NDC und Teilnehmernummer anhand erlaubter Längen.
-     *
-     * @throws CountryCodeParserException wenn keine gültige Kombination gefunden wird
-     */
-    protected function splitNdcSubscriber(string $rest): array
-    {
-        foreach ($this->ndcLengths as $len) {
-            $ndc = substr($rest, 0, $len);
-            $sub = substr($rest, $len);
-
-            if (in_array(strlen($sub), $this->subscriberLengths, true)) {
-                return [$ndc, $sub];
-            }
-        }
-
-        throw new CountryCodeParserException('Ungültiges NDC/Subscriber-Format');
-    }
-
-    /**
-     * Ermittelt den Typ der Nummer anhand des NDCs.
-     */
-    protected function detectType(string $ndc): ?PhoneNumberType
-    {
-        foreach ($this->ndcTypeRanges as $type => $ranges) {
-            foreach ($ranges as $start => $end) {
-                if ((int) $ndc >= $start && (int) $ndc <= $end) {
-                    return PhoneNumberType::from($type);
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Überprüft, ob die Gesamtlänge nach E.164 gültig ist (zwischen 7 und 15 Ziffern).
-     */
     protected function validateLength(string $ndc, string $sub): void
     {
-        $length = strlen($this->countryCode.$ndc.$sub);
-
+        $length = strlen($this->countryCode . $ndc . $sub);
         if ($length < 7 || $length > 15) {
             throw new CountryCodeParserException("Ungültige Gesamtlänge: {$length}");
         }
     }
 
-    /**
-     * Liefert optionale geografische Informationen:
-     * - Bei Festnetznummern: Region
-     * - Bei Mobilnummern: Anbietername
-     */
-    protected function detectGeography(string $ndc, ?PhoneNumberType $type): array
+    protected function validateNdcAndSubscriberLengths(string $ndc, string $sub): void
     {
-        $region = $this->getRegion();
-        $provider = null;
-
-        if ($type === PhoneNumberType::LANDLINE && $this->ndcFixedRegions && isset($this->ndcFixedRegions[$ndc])) {
-            $region = $this->ndcFixedRegions[$ndc];
+        if (!in_array(strlen($ndc), $this->ndcLengths, true) || !in_array(strlen($sub), $this->subscriberLengths, true)) {
+            throw new CountryCodeParserException('Ungültige NDC- oder Subscriber-Länge');
         }
-
-        if ($type === PhoneNumberType::MOBILE && $this->ndcMobileProviders && isset($this->ndcMobileProviders[$ndc])) {
-            $provider = $this->ndcMobileProviders[$ndc];
-        }
-
-        return [$region, $provider];
     }
 
     /**
-     * Gibt die Standardregion zurück (z. B. ISO 3166-1 Alpha-2).
+     * Gibt die Standardregion in ISO 3166-1 Alpha-2 zurück (z.B. DE)
      */
     abstract protected function getRegion(): string;
+
 
     /**
      * Liefert die Länderkürzel-Flagge als Emoji (z.B. DE → 🇩🇪).
@@ -193,10 +175,7 @@ abstract class AbstractPhoneNumberParser
         $emoji = '';
         foreach (str_split($this->getRegion()) as $char) {
             $codepoint = 0x1F1E6 + ord(strtoupper($char)) - ord('A');
-            // mb_chr erzeugt korrektes UTF-8 für Unicode-Codepoints
-            $emoji .= function_exists('mb_chr')
-                ? mb_chr($codepoint, 'UTF-8')
-                : IntlChar::chr($codepoint);
+            $emoji .= function_exists('mb_chr') ? mb_chr($codepoint, 'UTF-8') : IntlChar::chr($codepoint);
         }
         return $emoji;
     }

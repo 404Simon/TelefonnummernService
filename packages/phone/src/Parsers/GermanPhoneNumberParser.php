@@ -2,6 +2,8 @@
 
 namespace Phone\Parsers;
 
+use Phone\Data\Germany\NdcFixedRegions;
+use Phone\Data\Germany\NdcMobileProviders;
 use Phone\Enums\PhoneNumberType;
 
 /**
@@ -40,26 +42,18 @@ class GermanPhoneNumberParser extends AbstractPhoneNumberParser
     /**
      * Feste Region-Zuordnungen für bekannte Festnetzbereiche
      */
-    protected ?array $ndcFixedRegions = [
-        '30' => 'Berlin',
-        '40' => 'Hamburg',
-        '89' => 'München',
-        '69' => 'Frankfurt am Main',
-        '228' => 'Bonn',
-        '231' => 'Dortmund',
-        // bitte erweitere mich
-    ];
+    protected ?array $ndcFixedRegions;
 
     /**
      * Anbieter-Zuordnung für Mobilfunknummern
      */
-    protected ?array $ndcMobileProviders = [
-        '151' => 'Telekom',
-        '160' => 'Telekom',
-        '170' => 'Vodafone',
-        '176' => 'Telefonica',
-        // weiter hier
-    ];
+    protected ?array $ndcMobileProviders;
+
+    public function __construct()
+    {
+        $this->ndcFixedRegions = NdcFixedRegions::get();
+        $this->ndcMobileProviders = NdcMobileProviders::get();
+    }
 
     /**
      * Gibt den Standard-ISO-Ländercode für Deutschland zurück.
