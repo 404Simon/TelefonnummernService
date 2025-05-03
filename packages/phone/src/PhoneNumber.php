@@ -4,11 +4,8 @@ namespace Phone;
 
 use Phone\Enums\PhoneNumberType;
 
-class PhoneNumber
+final readonly class PhoneNumber
 {
-    /**
-     * Create a new class instance.
-     */
     public function __construct(
         // The original phone number input, for example +49170123456789-33
         public readonly string $phoneNumber,
@@ -16,6 +13,10 @@ class PhoneNumber
         public readonly string $countryCode,
         // The National Destination Code (NDC), for example 170 for mobile numbers in Germany or 30 for Berlin (Vorwahl ohne 0)
         public readonly string $ndc,
+        // The region name, like 'Berlin' for ndc=30
+        public readonly ?string $region,
+        // The mobile provider name, like 'Telekom' for ndc=170
+        public readonly ?string $mobileProvider,
         // The subscriber number, for example 123456789 (Hauptwahl)
         public readonly string $subscriberNumber,
         // The direct dialing code, for example 33 for Germany (Durchwahl)
