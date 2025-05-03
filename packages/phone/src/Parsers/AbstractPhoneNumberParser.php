@@ -14,7 +14,7 @@ use Phone\PhoneNumber;
  * von Telefonnummern. Sie kann durch konkrete Länder-Parser erweitert werden, indem
  * die Metadaten überschrieben werden und die Methode getRegion() implementiert wird.
  */
-abstract class AbstractPhoneNumberParser
+abstract class AbstractPhoneNumberParser implements PhoneNumberParserInterface
 {
     /** Ländervorwahl ohne '+' (z.B. "49" für Deutschland) */
     protected string $countryCode;
@@ -53,7 +53,7 @@ abstract class AbstractPhoneNumberParser
         $raw = $input;
         $normalized = $this->normalize($input);
         [$main, $directDial] = $this->extractExtension($normalized);
-        $rest       = $this->stripPrefix($main);
+        $rest = $this->stripPrefix($main);
 
         [$type, $ndc, $region, $provider] = $this->matchNdcAndGeo($rest);
 
@@ -63,8 +63,8 @@ abstract class AbstractPhoneNumberParser
         $this->validateLength($ndc, $subscriber);
         $this->validateNdcAndSubscriberLengths($ndc, $subscriber);
 
-        $formatted = "+{$this->countryCode} {$ndc} {$subscriber}" .
-                     ($directDial ? " x{$directDial}" : "");
+        $formatted = "+{$this->countryCode} {$ndc} {$subscriber}".
+                     ($directDial ? " x{$directDial}" : '');
 
         return new PhoneNumber(
             phoneNumber: $raw,
@@ -81,10 +81,11 @@ abstract class AbstractPhoneNumberParser
         );
     }
 
-   /**
+    /**
      * Kombinierte Erkennung von Typ, NDC, Region und Provider.
      *
      * @return array{PhoneNumberType, string, string, string|null}
+     *
      * @throws CountryCodeParserException
      */
     protected function matchNdcAndGeo(string $rest): array
@@ -96,7 +97,7 @@ abstract class AbstractPhoneNumberParser
         ));
 
         // Sort by length descending to prioritize longer prefixes
-        usort($possibleNdcs, fn($a, $b) => strlen($b) <=> strlen($a));
+        usort($possibleNdcs, fn ($a, $b) => strlen($b) <=> strlen($a));
 
         foreach ($possibleNdcs as $ndc) {
             if (str_starts_with($rest, $ndc)) {
@@ -108,9 +109,9 @@ abstract class AbstractPhoneNumberParser
 
                 return [$type, $ndc, $region, $provider];
             }
-    }
+        }
 
-    throw new CountryCodeParserException("Keine passende NDC für: {$rest}");
+        throw new CountryCodeParserException("Keine passende NDC für: {$rest}");
     }
 
     /**
@@ -121,7 +122,6 @@ abstract class AbstractPhoneNumberParser
         return preg_replace('/[^0-9+]/', '', $input) ?: '';
     }
 
-
     /**
      * Trennt eine eventuell vorhandene Extension (Durchwahl) ab.
      */
@@ -130,6 +130,7 @@ abstract class AbstractPhoneNumberParser
         if (preg_match('/(.*?)(?:\s*(?:ext|x|;)\s*(\d+))$/i', $input, $m)) {
             return [trim($m[1]), $m[2]];
         }
+
         return [$input, null];
     }
 
@@ -148,7 +149,7 @@ abstract class AbstractPhoneNumberParser
 
     protected function validateLength(string $ndc, string $sub): void
     {
-        $length = strlen($this->countryCode . $ndc . $sub);
+        $length = strlen($this->countryCode.$ndc.$sub);
         if ($length < 7 || $length > 15) {
             throw new CountryCodeParserException("Ungültige Gesamtlänge: {$length}");
         }
@@ -156,7 +157,7 @@ abstract class AbstractPhoneNumberParser
 
     protected function validateNdcAndSubscriberLengths(string $ndc, string $sub): void
     {
-        if (!in_array(strlen($ndc), $this->ndcLengths, true) || !in_array(strlen($sub), $this->subscriberLengths, true)) {
+        if (! in_array(strlen($ndc), $this->ndcLengths, true) || ! in_array(strlen($sub), $this->subscriberLengths, true)) {
             throw new CountryCodeParserException('Ungültige NDC- oder Subscriber-Länge');
         }
     }
@@ -165,7 +166,6 @@ abstract class AbstractPhoneNumberParser
      * Gibt die Standardregion in ISO 3166-1 Alpha-2 zurück (z.B. DE)
      */
     abstract protected function getRegion(): string;
-
 
     /**
      * Liefert die Länderkürzel-Flagge als Emoji (z.B. DE → 🇩🇪).
@@ -177,6 +177,7 @@ abstract class AbstractPhoneNumberParser
             $codepoint = 0x1F1E6 + ord(strtoupper($char)) - ord('A');
             $emoji .= function_exists('mb_chr') ? mb_chr($codepoint, 'UTF-8') : IntlChar::chr($codepoint);
         }
+
         return $emoji;
     }
 

@@ -30,4 +30,21 @@ final readonly class PhoneNumber
         // The type of the phone number, for example mobile, landline, etc.
         public readonly PhoneNumberType $type
     ) {}
+
+    public function toArray(): array
+    {
+        return [
+            'phoneNumber' => $this->phoneNumber,
+            'countryCode' => $this->countryCode,
+            'ndc' => $this->ndc,
+            'region' => $this->region,
+            'mobileProvider' => $this->mobileProvider,
+            'subscriberNumber' => $this->subscriberNumber,
+            'directDialingCode' => $this->directDialingCode,
+            'iso3166alpha2' => $this->iso3166alpha2,
+            'flag' => $this->flag,
+            'formattedPhone' => $this->formattedPhone,
+            'type' => $this->type->value,
+        ];
+    }
 }
