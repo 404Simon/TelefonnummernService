@@ -36,7 +36,7 @@
                     Flag: <span class="font-semibold">{{ $phoneNumber['flag'] }}</span>
                 </div>
                 <div class="text-gray-700 dark:text-gray-200">
-                    Type: <span class="font-semibold">{{ $phoneNumber['type']['value'] ?? '–' }}</span>
+                    Type: <span class="font-semibold">{{ $phoneNumber['type'] ?? '–' }}</span>
                 </div>
             </div>
 

@@ -16,10 +16,13 @@ class PhoneNumberParserFactory implements PhoneNumberParserInterface
     /**
      * Liste der Parser-Klassen, die standardmäßig registriert werden.
      * Neue Parser hier hinzufügen.
+     *
      * @var string[]
      */
     protected array $defaultParserClasses = [
         GermanPhoneNumberParser::class,
+        FrancePhoneNumberParser::class,
+        SpainPhoneNumberParser::class,
     ];
 
     /** @var AbstractPhoneNumberParser[] indexed by countryCode */
@@ -32,15 +35,13 @@ class PhoneNumberParserFactory implements PhoneNumberParserInterface
     {
         foreach ($this->defaultParserClasses as $parserClass) {
             /** @var AbstractPhoneNumberParser $parser */
-            $parser = new $parserClass();
+            $parser = new $parserClass;
             $this->registerParser($parser);
         }
     }
 
     /**
      * Registriert einen konkreten Parser.
-     *
-     * @param AbstractPhoneNumberParser $parser
      */
     public function registerParser(AbstractPhoneNumberParser $parser): void
     {
@@ -51,8 +52,8 @@ class PhoneNumberParserFactory implements PhoneNumberParserInterface
     /**
      * Versucht, anhand des Präfixes im Input den passenden Parser zu finden.
      *
-     * @param string $input z.B. "+49 30 1234567" oder "0049..." oder "030..."
-     * @return PhoneNumber
+     * @param  string  $input  z.B. "+49 30 1234567" oder "0049..." oder "030..."
+     *
      * @throws CountryCodeParserException wenn kein Parser gefunden wurde
      */
     public function parse(string $phone): PhoneNumber
