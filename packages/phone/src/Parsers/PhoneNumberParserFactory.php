@@ -13,8 +13,29 @@ use Phone\PhoneNumber;
  */
 class PhoneNumberParserFactory implements PhoneNumberParserInterface
 {
+    /**
+     * Liste der Parser-Klassen, die standardmäßig registriert werden.
+     * Neue Parser hier hinzufügen.
+     * @var string[]
+     */
+    protected array $defaultParserClasses = [
+        GermanPhoneNumberParser::class,
+    ];
+
     /** @var AbstractPhoneNumberParser[] indexed by countryCode */
     public array $parsers = [];
+
+    /**
+     * Initialisiert die Factory und registriert alle Default-Parser.
+     */
+    public function __construct()
+    {
+        foreach ($this->defaultParserClasses as $parserClass) {
+            /** @var AbstractPhoneNumberParser $parser */
+            $parser = new $parserClass();
+            $this->registerParser($parser);
+        }
+    }
 
     /**
      * Registriert einen konkreten Parser.
